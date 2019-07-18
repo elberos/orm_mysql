@@ -1,5 +1,5 @@
 {
-	"name": "elberos/core",
+	"name": "elberos/orm_mysql",
 	"type": "library",
 	"license": "Apache-2.0",
 	"description": "Elberos ORM Mysql",
