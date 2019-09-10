@@ -30,7 +30,8 @@ class Connection extends Struct
 	protected $__port = "";
 	protected $__login = "";
 	protected $__password = "";
-	protected $__db = "";
+	protected $__database = "";
+	protected $__prefix = "";
 	protected $__pdo = null;
 	
 	
@@ -56,10 +57,10 @@ class Connection extends Struct
 		try
 		{
 			$str = 'mysql:host='.$this->host;
-			if ($this->port !== null) $str .= ':'.$this->port;
-			if ($this->dbname !== null) $str .= ';dbname='.$this->db;
+			if ($this->port != null) $str .= ':'.$this->port;
+			if ($this->database != null) $str .= ';dbname='.$this->database;
 			$pdo = new \PDO(
-				'mysql:host='.$this->host.';dbname='.$this->db, $this->login, $this->password, 
+				$str, $this->login, $this->password, 
 				array(
 					\PDO::ATTR_PERSISTENT => false
 				)
@@ -104,7 +105,7 @@ class Connection extends Struct
 	function getOne($sql, $arr)
 	{
 		$st = $this->query($sql, $arr);
-		return $st->fetch(PDO::FETCH_ASSOC);
+		return $st->fetch(\PDO::FETCH_ASSOC);
 	}
 	
 	
