@@ -32,69 +32,18 @@ class Connection extends Struct
 	protected $__password = "";
 	protected $__database = "";
 	protected $__prefix = "";
-	protected $__pdo = null;
-	
-	
-	
-	/**
-	 * Returns is connected
-	 */
-	function isConnected()
-	{
-		return $this->pdo != null;
-	}
-	
-	
-	
-	/**
-	 * Connect to database
-	 */
-	function connect()
-	{
-		if ($this->__pdo) return $this;
-		
-		$last_error = "";
-		try
-		{
-			$str = 'mysql:host='.$this->host;
-			if ($this->port != null) $str .= ':'.$this->port;
-			if ($this->database != null) $str .= ';dbname='.$this->database;
-			$pdo = new \PDO(
-				$str, $this->login, $this->password, 
-				array(
-					\PDO::ATTR_PERSISTENT => false
-				)
-			);
-			$pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
-			$pdo->exec("set names utf8");
-		}
-		catch (\PDOException $e)
-		{
-			$last_error = 'Failed connected to database!';
-		}
-		catch (\Excepion $e)
-		{
-			$last_error = $e->getMessage();
-		}
-		
-		if ($last_error)
-		{
-			throw new \Exception($last_error);
-		}
-		
-		return $this->copy([ "pdo"=>$pdo ]);
-	}
 	
 	
 	
 	/**
 	 * Execute sql query
 	 */
-	function query($sql, $arr)
+	static function query($con, $sql, $arr = [])
 	{
-		$st = $this->pdo->prepare($sql, array(\PDO::ATTR_CURSOR => \PDO::CURSOR_FWDONLY));
-		$st->execute($arr);
-		return $st;
+		global $ctx;
+		
+		$driver = $ctx::getDriver($ctx, "Elberos.Orm.Mysql.Driver");
+		return $driver->query($con, $sql, $arr);
 	}
 	
 	
@@ -102,9 +51,9 @@ class Connection extends Struct
 	/**
 	 * Get first item
 	 */
-	function getOne($sql, $arr)
+	static function getOne($con, $sql, $arr)
 	{
-		$st = $this->query($sql, $arr);
+		$st = static::query($con, $sql, $arr);
 		return $st->fetch(\PDO::FETCH_ASSOC);
 	}
 	
@@ -113,7 +62,7 @@ class Connection extends Struct
 	/**
 	 * Execute sql query
 	 */
-	function insert($table_name, $data)
+	static function insert($con, $table_name, $data)
 	{
 		$keys = [];
 		$values = [];
@@ -125,8 +74,7 @@ class Connection extends Struct
 		$sql = "insert into " . $table_name . 
 			" (" . implode(",",$keys) . ") values (" . implode(",",$values) . ")"
 		;
-		$st = $this->pdo->prepare($sql, array(\PDO::ATTR_CURSOR => \PDO::CURSOR_FWDONLY));
-		$st->execute($data);
+		$st = static::query($con, $sql, $data);
 		return $st;
 	}
 	
@@ -136,7 +84,7 @@ class Connection extends Struct
 	/**
 	 * Execute sql query
 	 */
-	function insert_or_update($table_name, $insert, $update)
+	static function insert_or_update($con, $table_name, $insert, $update)
 	{
 		$ins_keys = [];
 		$ins_values = [];
@@ -166,10 +114,21 @@ class Connection extends Struct
 			)
 		;
 		
-		$st = $this->pdo->prepare($sql, array(\PDO::ATTR_CURSOR => \PDO::CURSOR_FWDONLY));
-		$st->execute($data);
+		$st = static::query($con, $sql, $data);
 		return $st;
 	}
 	
+	
+	
+	/**
+	 * Execute
+	 */
+	static function foundRows($con)
+	{
+		$sql = "SELECT FOUND_ROWS() as c;";
+		$st = static::query($con, $sql);
+		$res = $st->fetch(\PDO::FETCH_ASSOC);
+		return $res['c'];
+	}
 	
 }
